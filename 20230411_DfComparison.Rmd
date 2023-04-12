@@ -9,6 +9,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(tidyverse)
+set.seed(10)
 ```
 
 # Greetings!
@@ -25,7 +26,7 @@ Towards the end have written some interesting points about basics of R (and pyth
 ## Loading the data
 Let's first load the data and then do the required operation you watned to perform on the datasets you had. 
 ```{r Loading_the_data}
-load(STP_data)
+load("STP_data.RData")
 ```
 
 
@@ -49,18 +50,31 @@ There is an easy way in R to download any data set from GEO - if you are interes
 
 Now we need two data frames from this data set (dataframe = dataset for all practical purposes)
 
-WE will create two data frames with Gene Names and EG common, but NID and TB present in either one of them but not both. Also we will sample some random 3500 (for no reason) rows in both of the data frames and find which of them are common and which are not and proceed with creating them as separate data frames that could then be stored in respective csv files.
+WE will create two data frames with Gene Names common, but NID and TB present in either one of them but not both. Also we will sample some random 3500 (for no reason) rows in both of the data frames and find which of them are common and which are not and proceed with creating them as separate data frames that could then be stored in respective csv files.
 
 
 ```{r Creating_The_Problem}
-STP_data %>%
-  select(GENE_NAME,EG,TB) %>%
-  slice_sample(n = 3500)-> STP_TB_data
+set.seed(10)
+
 
 STP_data %>%
-  select(GENE_NAME,EG,NID) %>%
-  slice_sample(n = 3500)-> STP_NID_data
+  select(GENE_NAME,TB) %>%
+  distinct(GENE_NAME,.keep_all = T) %>% # key value is GENE_NAME and it should be distinct
+  slice_sample(n = 2000, replace = F)-> STP_TB_data
 
+STP_data %>% 
+  select(GENE_NAME,NID) %>%
+  distinct(GENE_NAME, .keep_all = T) %>% # key value is GENE_NAME and it should be distinct
+  slice_sample(n = 2000, replace = F)-> STP_NID_data
+
+
+# To check if we indeed have 2000 rows that are unique
+
+# STP_NID_data["GENE_NAME"] %>%
+#   unlist(use.names = F) %>%
+#   unique() %>%
+#   length()
+  
 ```
 
 ## Proceeding with the solution
@@ -89,9 +103,13 @@ We have got the duplicate gene names in either of the data frames, but we want t
 Starting with what we did before and converting it into a better format
 ```{r Df_cumbersome}
 
+# taking the intersection of the gene names present in the two data frames - this is the duplicates
 intersect(STP_NID_data["GENE_NAME"], STP_TB_data["GENE_NAME"]) %>%
-  unlist(use.names = F) -> STP_duplicateGeneNames
+  unlist(use.names = F) %>%
+  as.character() -> STP_duplicateGeneNames
 
+# checking the length of duplicated names
+length(STP_duplicateGeneNames)
 ```
 
 Now we can proceed in two different ways from here, which i really want to discuss with you:
@@ -107,7 +125,7 @@ This we will perform using function 'mutate', mutate the column to change it, ri
 ```{r Method_1_changingToChar}
 
 STP_TB_data %>%
-  mutate(GENE_NAME = as.character(GENE_NAME)) -> STP_TB_data
+  mutate(GENE_NAME = as.character(GENE_NAME) ) -> STP_TB_data
 
 STP_NID_data %>%
   mutate(GENE_NAME = as.character(GENE_NAME)) -> STP_NID_data
@@ -115,10 +133,48 @@ STP_NID_data %>%
 ```
 Now to merge we will use the function 'full_join'
 ```{r Method1_merge}
-full_join(STP_NID_data, STP_TB_data)-> STP_Mthd1_MrgdDF
+full_join(STP_NID_data, STP_TB_data, by = "GENE_NAME")-> STP_Mthd1_MrgdDF
 
 STP_Mthd1_MrgdDF
 
 ```
-You see that the number of rows is `r nrow(STP_Mthd1_MrgdDF)` 
+You see that the number of rows is `r nrow(STP_Mthd1_MrgdDF)` which is exactly 2000 + 2000 - 843 (length of duplicate names) = 3157
+
+```{r Mthd1_Making_SepDFs}
+STP_Mthd1_MrgdDF %>%
+  filter(GENE_NAME %in% STP_duplicateGeneNames) -> STP_Mthd1_DupDF
+
+
+STP_Mthd1_MrgdDF %>%
+  filter(!GENE_NAME %in% STP_duplicateGeneNames) -> STP_Mthd1_UniqDF_merged
+
+
+STP_Mthd1_UniqDF_merged %>%
+  select(GENE_NAME, TB) %>%
+  filter(!is.na(TB)) -> STP_Mthd1_UniqDF_TB
+
+
+STP_Mthd1_UniqDF_merged %>%
+  select(GENE_NAME, NID) %>%
+  filter(!is.na(NID)) -> STP_Mthd1_UniqDF_NID
+
+```
+### Saving the data frames
+
+Now we will save the data frames generated from method 1 into separate csv files
+
+```{r Method1_SavingExcel}
+# Merged data
+write_csv2(STP_Mthd1_MrgdDF, file = "STP_Mthd1_Merged_NID_TB.csv")
+
+# TB data 
+write_csv2(STP_Mthd1_UniqDF_TB, file = "STP_Mthd1_Uniq_TB.csv")
+
+# NID data
+write_csv2(STP_Mthd1_UniqDF_NID, file = "STP_Mthd1_Uniq_NID.csv")
+```
+
+
+
+
 
