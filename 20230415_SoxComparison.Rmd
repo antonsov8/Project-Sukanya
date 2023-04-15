@@ -12,6 +12,76 @@ library(tidyverse)
 
 ## Data  
 ```{r LoadingThedataset}
+Sox2_E14d5 <- read_csv("Sox2inE14.5DiffPeaks4R.csv")
+Sox3_E14d5 <- read_csv("Sox3inE14.5DiffPeaks4R.csv")
+```
+## Making a better Annotation
+```{r MA_1}
 
+Sox2_E14d5 %>%
+  head() %>%
+  select(Anno) %>%
+  unlist(use.names= F) -> MA_Anno_6
+
+Sox2_E14d5 %>%
+  mutate(Anno_New = str_remove(Anno, pattern = "[(].*[)]"))
+
+MA_Anno_6 %>%
+  str_remove(pattern = "[(].*[)]") %>%
+  str_trim()
+
+```
+```{r MA_2}
+Sox2_E14d5 %>%
+  mutate(Anno_New = str_remove(Anno, pattern = "[(].*[)]")) %>%
+  mutate(Key = paste(Gene, Anno_New, sep = "_")) -> MA_Sox2_E14d5
+
+MA_Sox2_E14d5 %>%
+  select(Key) %>%
+  unlist(use.names = F) -> MA_Sox2_Key
+
+Sox3_E14d5 %>%
+  mutate(Anno_New = str_remove(Anno, pattern = "[(].*[)]")) %>%
+  mutate(Key = paste(Gene, Anno_New, sep = "_")) -> MA_Sox3_E14d5
+
+MA_Sox3_E14d5 %>%
+  select(Key) %>%
+  unlist(use.names = F) -> MA_Sox3_Key
+
+
+intersect(MA_Sox2_Key, MA_Sox3_Key) -> MA_keyIntersect
+  
+
+```
+
+
+
+```{r MA_3}
+MA_Sox2_E14d5 %>%
+  filter(Key %in% MA_keyIntersect) %>%
+  select(Key) %>%
+  distinct() %>%
+  nrow()
+
+MA_Sox3_E14d5 %>%
+  filter(Key %in% MA_keyIntersect) %>%
+  select(Key) %>%
+  distinct() %>%
+  nrow()
+
+
+```
+```{r}
+
+Sox2_E14d5 %>%
+  nrow()
+
+Sox2_E14d5 %>%
+  select(Anno, Gene) %>%
+  distinct() %>%
+  nrow()
+
+
+Sox3_E14d5
 ```
 
