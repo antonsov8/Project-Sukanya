@@ -159,7 +159,7 @@ STP_Mthd1_UniqDF_merged %>%
   filter(!is.na(NID)) -> STP_Mthd1_UniqDF_NID
 
 ```
-### Saving the data frames
+#### Saving the data frames
 
 Now we will save the data frames generated from method 1 into separate csv files
 
@@ -173,6 +173,18 @@ write_csv2(STP_Mthd1_UniqDF_TB, file = "STP_Mthd1_Uniq_TB.csv")
 # NID data
 write_csv2(STP_Mthd1_UniqDF_NID, file = "STP_Mthd1_Uniq_NID.csv")
 ```
+
+
+### Method 2
+
+## Redundant GeneNames
+
+
+```{r RG}
+
+```
+
+
 
 
 
