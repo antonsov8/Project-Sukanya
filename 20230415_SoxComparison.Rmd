@@ -84,4 +84,103 @@ Sox2_E14d5 %>%
 
 Sox3_E14d5
 ```
+```{r}
+Sox2_E14d5 %>%
+  nrow()
+
+Sox2_E14d5 %>%
+  distinct(Gene, Anno) %>%
+  nrow()
+
+Sox2_E14d5 %>%
+  select(Gene, Anno) %>%
+  distinct() %>%
+  nrow()
+
+Sox2_E14d5 %>%
+  rownames_to_column(var = "Index") %>%
+  distinct(Gene, Anno, .keep_all = T) %>%
+  select(Index) %>%
+  unlist(use.names = F) -> cat1
+
+
+
+```
+
+```{r}
+Sox2_E14d5 %>%
+  rownames_to_column(var = "Index") %>%
+  filter(!Index %in% cat1) %>%
+  head()
+
+Sox2_E14d5 %>%
+  rownames_to_column(var = "Index") %>%
+  filter(Gene == "Flnb")
+
+```
+## 2023-04-17 (Monday) Jugaad 
+
+```{r J_newDfs}
+
+Sox2_E14d5 %>%
+  distinct(Gene,Anno, .keep_all = T) -> J_Sox2_E14d5
+
+Sox3_E14d5 %>%
+  distinct(Gene,Anno, .keep_all = T) -> J_Sox3_E14d5
+
+```
+
+Now that the two dataframes are having unique elements based on  Gene and Anno
+
+But befroe that I have got to ensure that the Sox3 has is cleaned a little better -
+It has some fourth column that has been accidentally created
+
+```{r J_CleaningSox3}
+
+Sox3_E14d5 %>%
+  distinct(Gene, Anno, .keep_all = T) %>% 
+  mutate(Anno = if_else(!is.na(`...4`),true = paste(Anno, dTSS, " "),false = Anno ),
+         dTSS = if_else(!is.na(`...4`),true = as.double(`...4`),false = as.double(dTSS) )) %>%
+  select(!`...4`) -> J_Sox3_E14d5
+
+```
+
+
+```{r J_MergedDF}
+
+full_join(J_Sox2_E14d5, J_Sox3_E14d5, 
+          by = c("Gene", "Anno"),
+          suffix = c("_Sox2", "_Sox3")) -> J_Mrgd_Sox2_Sox3
+
+J_Mrgd_Sox2_Sox3
+
+```
+
+
+```{r J_DuplicateGenes}
+
+J_Mrgd_Sox2_Sox3 %>%
+  filter(!is.na(dTSS_Sox2),
+         !is.na(dTSS_Sox3)) -> J_DupGenes
+
+write_csv(J_DupGenes, file = "20230417_DuplicateGenes_S2S3.csv")
+```
+
+```{r J_UniqSox2}
+J_Mrgd_Sox2_Sox3 %>%
+  filter(is.na(dTSS_Sox3)) %>%
+  select(!dTSS_Sox3) -> J_UniqSox2
+
+write_csv(J_UniqSox2, file = "20230417_UniqueGenes_S2.csv")
+
+```
+
+```{r J_UniqSox3}
+J_Mrgd_Sox2_Sox3 %>%
+  filter(is.na(dTSS_Sox2)) %>%
+  filter(!is.na(Gene)) %>%
+  select(!dTSS_Sox2) -> J_UniqSox3
+
+write_csv(J_UniqSox3, file = "20230417_UniqueGenes_S3.csv")
+```
 
