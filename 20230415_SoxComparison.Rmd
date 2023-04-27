@@ -184,3 +184,57 @@ J_Mrgd_Sox2_Sox3 %>%
 write_csv(J_UniqSox3, file = "20230417_UniqueGenes_S3.csv")
 ```
 
+
+## 20230427 Duplicates with repeats (DwR)
+
+```{r DwR_CleaningSox3}
+DwR_Sox2_E14d5 <- Sox2_E14d5
+  
+Sox3_E14d5 %>%
+  mutate(Anno = if_else(!is.na(`...4`),true = paste(Anno, dTSS, " "),false = Anno ),
+         dTSS = if_else(!is.na(`...4`),true = as.double(`...4`),false = as.double(dTSS) )) %>%
+  select(!`...4`) -> DwR_Sox3_E14d5
+
+
+```
+
+```{r DwR_DirectlyTakingTheIntersect}
+
+DwR_Sox2_E14d5 %>%
+  full_join(DwR_Sox3_E14d5, 
+            by = c("Gene", "Anno"),
+            suffix = c("_Sox2", "_Sox3"))-> DwR_Mrgd_Sox2_Sox3
+
+```
+
+
+Now find the duplicates in this merged dataframe
+
+```{r DwR_Duplicates}
+
+
+DwR_Mrgd_Sox2_Sox3 %>%
+  filter(!is.na(dTSS_Sox2),
+         !is.na(dTSS_Sox3)) -> DwR_DupGenes
+
+write_csv(DwR_DupGenes, file = "20230427_DuplicateGenes_S2S3.csv")
+```
+```{r J_UniqSox2}
+DwR_Mrgd_Sox2_Sox3 %>%
+  filter(is.na(dTSS_Sox3)) %>%
+  select(!dTSS_Sox3) -> DwR_UniqSox2
+
+write_csv(DwR_UniqSox2, file = "20230427_UniqueGenes_S2.csv")
+
+```
+
+```{r J_UniqSox3}
+DwR_Mrgd_Sox2_Sox3 %>%
+  filter(is.na(dTSS_Sox2)) %>%
+  filter(!is.na(Gene)) %>%
+  select(!dTSS_Sox2) -> DwR_UniqSox3
+
+write_csv(DwR_UniqSox3, file = "20230427_UniqueGenes_S3.csv")
+```
+
+
